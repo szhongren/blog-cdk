@@ -58,7 +58,7 @@ export class PipelineStack extends Stack {
     const pipeline = new CdkPipeline(this, "CdkPipeline", {
       pipelineName: "BlogCdkPipeline",
       cloudAssemblyArtifact: cdkBuildArtifact,
-      sourceAction: cdkSynthAction,
+      sourceAction: cdkSourceAction,
       synthAction: cdkSynthAction,
     });
 
