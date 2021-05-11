@@ -21,11 +21,11 @@ export class CdkPipelineStack extends Stack {
       buildSpec: BuildSpec.fromObject({
         version: "0.2",
         phases: {
-          install: {
+          prebuild: {
             commands: "npm install",
           },
           build: {
-            commands: ["npm run build", "npm run cdk synth"],
+            commands: "npm run cdk synth",
           },
         },
         artifacts: {
