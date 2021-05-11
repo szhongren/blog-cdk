@@ -17,27 +17,6 @@ export class CdkPipelineStack extends Stack {
   constructor(app: App, id: string, props: StackProps) {
     super(app, id, props);
 
-    const cdkSynthProject = new PipelineProject(this, "CdkSynth", {
-      buildSpec: BuildSpec.fromObject({
-        version: "0.2",
-        phases: {
-          pre_build: {
-            commands: "npm install",
-          },
-          build: {
-            commands: "npm run cdk synth",
-          },
-        },
-        artifacts: {
-          "base-directory": "cdk.out",
-          files: "**/*",
-        },
-      }),
-      environment: {
-        buildImage: LinuxBuildImage.STANDARD_5_0,
-      },
-    });
-
     const cdkSourceArtifact = new Artifact("CdkSourceArtifact");
     const cdkBuildArtifact = new Artifact("CdkBuildArtifact");
 
@@ -51,11 +30,11 @@ export class CdkPipelineStack extends Stack {
       branch: "main",
     });
 
-    const cdkSynthAction = new CodeBuildAction({
-      project: cdkSynthProject,
-      actionName: "Synth",
-      input: cdkSourceArtifact,
-      outputs: [cdkBuildArtifact],
+    const cdkSynthAction = new SimpleSynthAction({
+      installCommands: ["npm install"],
+      synthCommand: "npm run cdk synth",
+      sourceArtifact: cdkSourceArtifact,
+      cloudAssemblyArtifact: cdkBuildArtifact,
     });
 
     const pipeline = new CdkPipeline(this, "CdkPipeline", {
