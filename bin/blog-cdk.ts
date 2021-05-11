@@ -1,15 +1,13 @@
 #!/usr/bin/env node
 import "source-map-support/register";
-import * as cdk from "@aws-cdk/core";
+import { App } from "@aws-cdk/core";
 import { CdkPipelineStack } from "../lib/pipeline-stack";
+import { env } from "../lib/config/env";
 
-const app = new cdk.App();
+const app = new App();
 
 new CdkPipelineStack(app, "BlogCdkPipelineStack", {
-  env: {
-    account: "636584431701",
-    region: "us-east-1",
-  },
+  env,
 });
 
 app.synth();

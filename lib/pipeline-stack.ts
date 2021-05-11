@@ -1,17 +1,12 @@
+import { Artifact } from "@aws-cdk/aws-codepipeline";
 import {
-  BuildSpec,
-  LinuxBuildImage,
-  PipelineProject,
-} from "@aws-cdk/aws-codebuild";
-import { Artifact, Pipeline } from "@aws-cdk/aws-codepipeline";
-import {
-  CloudFormationCreateUpdateStackAction,
-  CodeBuildAction,
   GitHubSourceAction,
   GitHubTrigger,
 } from "@aws-cdk/aws-codepipeline-actions";
-import { App, SecretValue, Stack, StackProps } from "@aws-cdk/core";
+import { App, SecretValue, Stack, StackProps, Stage } from "@aws-cdk/core";
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
+import { BlogStage } from "./blog-stage";
+import { env } from "./config/env";
 
 export class CdkPipelineStack extends Stack {
   constructor(app: App, id: string, props: StackProps) {
@@ -44,38 +39,6 @@ export class CdkPipelineStack extends Stack {
       synthAction: cdkSynthAction,
     });
 
-    // const cdkSynthAction = new Simple
-    // new Pipeline(this, "Pipeline", {
-    //   stages: [
-    //     {
-    //       stageName: "Source",
-    //       actions: [cdkAction],
-    //     },
-    //     {
-    //       stageName: "Build",
-    //       actions: [
-    //         new CodeBuildAction({
-    //           actionName: "CDK_Build",
-    //           project: cdkBuild,
-    //           input: cdkSourceArtifact,
-    //           outputs: [cdkBuildArtifact],
-    //         }),
-    //       ],
-    //     },
-    //     {
-    //       stageName: "Deploy",
-    //       actions: [
-    //         new CloudFormationCreateUpdateStackAction({
-    //           actionName: "Lambda_CFN_Deploy",
-    //           templatePath: cdkBuildArtifact.atPath(
-    //             "LambdaStack.template.json"
-    //           ),
-    //           stackName: "LambdaDeploymentStack",
-    //           adminPermissions: true,
-    //         }),
-    //       ],
-    //     },
-    //   ],
-    // });
+    pipeline.addApplicationStage(new BlogStage(app, "ProdBlog", { env }));
   }
 }
