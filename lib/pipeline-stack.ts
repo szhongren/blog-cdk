@@ -21,7 +21,7 @@ export class CdkPipelineStack extends Stack {
       buildSpec: BuildSpec.fromObject({
         version: "0.2",
         phases: {
-          prebuild: {
+          pre_build: {
             commands: "npm install",
           },
           build: {
