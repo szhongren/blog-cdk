@@ -48,6 +48,7 @@ export class CdkPipelineStack extends Stack {
       trigger: GitHubTrigger.POLL,
       owner: "szhongren",
       repo: "blog-cdk",
+      branch: "main",
     });
 
     const cdkSynthAction = SimpleSynthAction.standardNpmSynth({
