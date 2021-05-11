@@ -39,6 +39,6 @@ export class CdkPipelineStack extends Stack {
       synthAction: cdkSynthAction,
     });
 
-    pipeline.addApplicationStage(new BlogStage(app, "ProdBlog", { env }));
+    pipeline.addApplicationStage(new BlogStage(app, "Prod", { env }));
   }
 }
