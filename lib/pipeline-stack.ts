@@ -13,7 +13,7 @@ import {
 import { App, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 
-export class PipelineStack extends Stack {
+export class CdkPipelineStack extends Stack {
   constructor(app: App, id: string, props: StackProps) {
     super(app, id, props);
 
