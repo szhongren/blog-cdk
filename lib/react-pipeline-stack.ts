@@ -32,7 +32,7 @@ export class ReactPipelineStack extends Stack {
     });
 
     const reactBuildActionRole = new Role(this, "ReactBuildActionRole", {
-      assumedBy: new ServicePrincipal("codebuild.amazonaws.com"),
+      assumedBy: new AccountRootPrincipal(),
     });
 
     props.reactBucket.grantReadWrite(reactBuildActionRole);
