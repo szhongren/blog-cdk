@@ -8,7 +8,7 @@ export class ReactS3Stack extends Stack {
     super(app, id, props);
 
     this.reactBucket = new Bucket(this, "Test", {
-      versioned: true,
+      websiteIndexDocument: "latest/index.html",
     });
   }
 }

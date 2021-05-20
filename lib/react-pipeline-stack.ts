@@ -31,17 +31,21 @@ export class ReactPipelineStack extends Stack {
       branch: "main",
     });
 
-    const reactBuildActionRole = new Role(this, "ReactBuildActionRole", {
-      assumedBy: new AccountRootPrincipal(),
-    });
+    const reactBuildActionProjectRole = new Role(
+      this,
+      "ReactBuildActionProjectRole",
+      {
+        assumedBy: new ServicePrincipal("codebuild.amazonaws.com"),
+      }
+    );
 
-    props.reactBucket.grantReadWrite(reactBuildActionRole);
+    props.reactBucket.grantReadWrite(reactBuildActionProjectRole);
 
     const reactBuildAction = new CodeBuildAction({
       actionName: "Build",
       input: reactSourceArtifact,
       outputs: [reactBuildArtifact],
-      role: reactBuildActionRole,
+      role: reactBuildActionProjectRole,
       project: new Project(this, "ReactBuildProject", {
         buildSpec: BuildSpec.fromObject({
           version: "0.2",
@@ -66,6 +70,7 @@ export class ReactPipelineStack extends Stack {
             "base-directory": "build",
           },
         }),
+        role: reactBuildActionProjectRole,
       }),
     });
 
