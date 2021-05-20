@@ -6,7 +6,12 @@ import {
   CodeBuildAction,
   S3DeployAction,
 } from "@aws-cdk/aws-codepipeline-actions";
-import { AccountRootPrincipal, Role } from "@aws-cdk/aws-iam";
+import {
+  AccountRootPrincipal,
+  CompositePrincipal,
+  Role,
+  ServicePrincipal,
+} from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
@@ -35,7 +40,10 @@ export class ReactPipelineStack extends Stack {
       this,
       "ReactBuildActionProjectRole",
       {
-        assumedBy: new AccountRootPrincipal(),
+        assumedBy: new CompositePrincipal(
+          new AccountRootPrincipal(),
+          new ServicePrincipal("codebuild.amazonaws.com")
+        ),
       }
     );
 
