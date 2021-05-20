@@ -37,9 +37,19 @@ export class ReactPipelineStack extends Stack {
       project: new Project(this, "ReactBuildProject", {
         buildSpec: BuildSpec.fromObject({
           version: "0.2",
+          env: {
+            variables: {
+              ARTIFACTS_BUCKET: props.reactBucket.bucketName,
+            },
+          },
           phases: {
             build: {
               commands: ["npm install", "npm run build"],
+            },
+            post_build: {
+              commands: [
+                "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
+              ],
             },
           },
           artifacts: {
@@ -57,12 +67,20 @@ export class ReactPipelineStack extends Stack {
       objectKey: "{datetime}",
     });
 
+    const latestS3DeployAction = new S3DeployAction({
+      actionName: "S3Deploy",
+      input: reactBuildArtifact,
+      bucket: props.reactBucket,
+      objectKey: "latest",
+    });
+
     const reactPipeline = new Pipeline(this, "ReactPipeline", {
       pipelineName: "ReactPipeline",
       stages: [
         { stageName: "Source", actions: [reactSourceAction] },
         { stageName: "Build", actions: [reactBuildAction] },
         { stageName: "Deploy", actions: [s3DeployAction] },
+        { stageName: "LatestDeploy", actions: [latestS3DeployAction] },
       ],
     });
   }
