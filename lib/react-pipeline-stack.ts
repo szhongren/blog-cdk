@@ -6,7 +6,7 @@ import {
   CodeBuildAction,
   S3DeployAction,
 } from "@aws-cdk/aws-codepipeline-actions";
-import { AccountRootPrincipal, Role } from "@aws-cdk/aws-iam";
+import { AccountRootPrincipal, Role, ServicePrincipal } from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
@@ -31,10 +31,17 @@ export class ReactPipelineStack extends Stack {
       branch: "main",
     });
 
+    const reactBuildActionRole = new Role(this, "ReactBuildActionRole", {
+      assumedBy: new ServicePrincipal("codebuild.amazonaws.com"),
+    });
+
+    props.reactBucket.grantReadWrite(reactBuildActionRole);
+
     const reactBuildAction = new CodeBuildAction({
       actionName: "Build",
       input: reactSourceArtifact,
       outputs: [reactBuildArtifact],
+      role: reactBuildActionRole,
       project: new Project(this, "ReactBuildProject", {
         buildSpec: BuildSpec.fromObject({
           version: "0.2",
