@@ -1,4 +1,4 @@
-import { Project, BuildSpec } from "@aws-cdk/aws-codebuild";
+import { BuildSpec, Project } from "@aws-cdk/aws-codebuild";
 import { Artifact, Pipeline } from "@aws-cdk/aws-codepipeline";
 import {
   GitHubSourceAction,
@@ -7,18 +7,15 @@ import {
   S3DeployAction,
 } from "@aws-cdk/aws-codepipeline-actions";
 import { Bucket } from "@aws-cdk/aws-s3";
-import { Construct, SecretValue, Stage, StageProps } from "@aws-cdk/core";
-import { ReactS3Stack } from "./react-s3-stack";
+import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
-export interface ReactPipelineStageProps extends StageProps {
+export interface ReactPipelineStackProps extends StackProps {
   reactBucket: Bucket;
 }
 
-export class ReactPipelineStage extends Stage {
-  reactS3Stack: ReactS3Stack;
-
-  constructor(scope: Construct, id: string, props: ReactPipelineStageProps) {
-    super(scope, id, props);
+export class ReactPipelineStack extends Stack {
+  constructor(app: Construct, id: string, props: ReactPipelineStackProps) {
+    super(app, id, props);
 
     const reactSourceArtifact = new Artifact("ReactSourceArtifact");
     const reactBuildArtifact = new Artifact("ReactBuildArtifact");
@@ -54,7 +51,7 @@ export class ReactPipelineStage extends Stage {
     });
 
     const s3DeployAction = new S3DeployAction({
-      actionName: "S3 Deploy",
+      actionName: "S3Deploy",
       input: reactBuildArtifact,
       bucket: props.reactBucket,
       objectKey: "{datetime}",
