@@ -68,7 +68,7 @@ export class ReactPipelineStack extends Stack {
     });
 
     const latestS3DeployAction = new S3DeployAction({
-      actionName: "S3Deploy",
+      actionName: "LatestS3Deploy",
       input: reactBuildArtifact,
       bucket: props.reactBucket,
       objectKey: "latest",
@@ -79,8 +79,10 @@ export class ReactPipelineStack extends Stack {
       stages: [
         { stageName: "Source", actions: [reactSourceAction] },
         { stageName: "Build", actions: [reactBuildAction] },
-        { stageName: "Deploy", actions: [s3DeployAction] },
-        { stageName: "LatestDeploy", actions: [latestS3DeployAction] },
+        {
+          stageName: "Deploy",
+          actions: [s3DeployAction, latestS3DeployAction],
+        },
       ],
     });
   }
