@@ -6,6 +6,7 @@ import {
   CodeBuildAction,
   S3DeployAction,
 } from "@aws-cdk/aws-codepipeline-actions";
+import { AccountRootPrincipal, Role } from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
@@ -48,6 +49,7 @@ export class ReactPipelineStack extends Stack {
             },
             post_build: {
               commands: [
+                "aws sts get-caller-identity",
                 "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
               ],
             },
