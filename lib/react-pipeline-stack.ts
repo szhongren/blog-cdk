@@ -94,6 +94,7 @@ export class ReactPipelineStack extends Stack {
       input: reactBuildArtifact,
       bucket: props.reactBucket,
       objectKey: "latest",
+      extract: false,
     });
 
     const reactPipeline = new Pipeline(this, "ReactPipeline", {
