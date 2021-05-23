@@ -15,12 +15,12 @@ import {
 import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
-export interface ReactPipelineStackProps extends StackProps {
-  reactBucket: Bucket;
+export interface StaticSitePipelineStackProps extends StackProps {
+  staticSiteBucket: Bucket;
 }
 
-export class ReactPipelineStack extends Stack {
-  constructor(app: Construct, id: string, props: ReactPipelineStackProps) {
+export class StaticSitePipelineStack extends Stack {
+  constructor(app: Construct, id: string, props: StaticSitePipelineStackProps) {
     super(app, id, props);
 
     const reactSourceArtifact = new Artifact("ReactSourceArtifact");
@@ -47,7 +47,7 @@ export class ReactPipelineStack extends Stack {
       }
     );
 
-    props.reactBucket.grantReadWrite(reactBuildActionProjectRole);
+    props.staticSiteBucket.grantReadWrite(reactBuildActionProjectRole);
 
     const reactBuildAction = new CodeBuildAction({
       actionName: "Build",
@@ -59,7 +59,7 @@ export class ReactPipelineStack extends Stack {
           version: "0.2",
           env: {
             variables: {
-              ARTIFACTS_BUCKET: props.reactBucket.bucketName,
+              ARTIFACTS_BUCKET: props.staticSiteBucket.bucketName,
             },
           },
           phases: {
@@ -85,20 +85,19 @@ export class ReactPipelineStack extends Stack {
     const s3DeployAction = new S3DeployAction({
       actionName: "S3Deploy",
       input: reactBuildArtifact,
-      bucket: props.reactBucket,
+      bucket: props.staticSiteBucket,
       objectKey: "{datetime}",
     });
 
     const latestS3DeployAction = new S3DeployAction({
       actionName: "LatestS3Deploy",
       input: reactBuildArtifact,
-      bucket: props.reactBucket,
+      bucket: props.staticSiteBucket,
       objectKey: "latest",
       extract: false,
     });
 
-    const reactPipeline = new Pipeline(this, "ReactPipeline", {
-      pipelineName: "ReactPipeline",
+    const staticSitePipeline = new Pipeline(this, "StaticSitePipeline", {
       stages: [
         { stageName: "Source", actions: [reactSourceAction] },
         { stageName: "Build", actions: [reactBuildAction] },
