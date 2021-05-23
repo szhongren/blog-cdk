@@ -16,12 +16,6 @@ export class StaticSiteStack extends Stack {
   constructor(app: Construct, id: string, props?: StackProps) {
     super(app, id, props);
 
-    let siteDomain = "shaoz.io";
-
-    const hostedZone = HostedZone.fromLookup(this, "shaoz.io", {
-      domainName: siteDomain,
-    });
-
     this.staticSiteBucket = new Bucket(this, "DeploymentBucket", {
       versioned: true,
       bucketName: "blog-deployment-bucket",
