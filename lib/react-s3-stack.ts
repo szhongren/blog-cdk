@@ -10,7 +10,7 @@ export class ReactS3Stack extends Stack {
 
     this.reactBucket = new Bucket(this, "DeploymentBucket", {
       versioned: true,
-      bucketName: "BlogDeploymentBucket",
+      bucketName: "blog-deployment-bucket",
     });
   }
 }
