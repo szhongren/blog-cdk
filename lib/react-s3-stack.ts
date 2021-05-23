@@ -12,5 +12,17 @@ export class ReactS3Stack extends Stack {
       versioned: true,
       bucketName: "blog-deployment-bucket",
     });
+
+    const cloudfrontBucket = new Bucket(this, "CloudfrontBucket", {
+      versioned: true,
+      bucketName: "blog-cloudfront-bucket",
+      publicReadAccess: true,
+      websiteIndexDocument: "index.html",
+    });
+
+    new BucketDeployment(this, "Deployment", {
+      sources: [Source.bucket(this.reactBucket, "latest")],
+      destinationBucket: cloudfrontBucket,
+    });
   }
 }
