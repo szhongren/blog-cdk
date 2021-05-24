@@ -16,7 +16,6 @@ import { NodejsFunction } from "@aws-cdk/aws-lambda-nodejs";
 import { ARecord, HostedZone, RecordTarget } from "@aws-cdk/aws-route53";
 import { CloudFrontTarget } from "@aws-cdk/aws-route53-targets";
 import { BlockPublicAccess, Bucket, HttpMethods } from "@aws-cdk/aws-s3";
-import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSiteStackProps extends StackProps {
@@ -24,6 +23,8 @@ export interface StaticSiteStackProps extends StackProps {
 }
 
 export class StaticSiteStack extends Stack {
+  cloudfrontBucket: Bucket;
+
   constructor(app: Construct, id: string, props: StaticSiteStackProps) {
     super(app, id, props);
 
@@ -46,6 +47,8 @@ export class StaticSiteStack extends Stack {
     });
 
     const [cloudfrontBucket, cloudfrontOAI] = this.setUpCloudfrontBucket(props);
+
+    this.cloudfrontBucket = cloudfrontBucket;
 
     const domainName = "shaoz.io";
 
@@ -138,11 +141,6 @@ export class StaticSiteStack extends Stack {
           maxAge: 3000,
         },
       ],
-    });
-
-    new BucketDeployment(this, "Deployment", {
-      sources: [Source.bucket(props.deploymentBucket, "latest")],
-      destinationBucket: cloudfrontBucket,
     });
 
     const cloudfrontOAI = new OriginAccessIdentity(this, "CloudfrontOAI", {

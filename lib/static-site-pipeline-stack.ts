@@ -13,9 +13,11 @@ import {
   ServicePrincipal,
 } from "@aws-cdk/aws-iam";
 import { Bucket } from "@aws-cdk/aws-s3";
+import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSitePipelineStackProps extends StackProps {
+  cloudfrontBucket: Bucket;
   deploymentBucket: Bucket;
 }
 
@@ -66,12 +68,6 @@ export class StaticSitePipelineStack extends Stack {
             build: {
               commands: ["npm install", "npm run build"],
             },
-            post_build: {
-              commands: [
-                "aws sts get-caller-identity",
-                // "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
-              ],
-            },
           },
           artifacts: {
             files: "**/*",
@@ -106,6 +102,11 @@ export class StaticSitePipelineStack extends Stack {
           actions: [s3DeployAction, latestS3DeployAction],
         },
       ],
+    });
+
+    new BucketDeployment(this, "Deployment", {
+      sources: [Source.bucket(props.deploymentBucket, "latest")],
+      destinationBucket: props.cloudfrontBucket,
     });
   }
 }
