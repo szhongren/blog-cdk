@@ -10,13 +10,11 @@ import {
   SSLMethod,
   ViewerProtocolPolicy,
 } from "@aws-cdk/aws-cloudfront";
-import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { Runtime } from "@aws-cdk/aws-lambda";
 import { NodejsFunction } from "@aws-cdk/aws-lambda-nodejs";
 import { ARecord, HostedZone, RecordTarget } from "@aws-cdk/aws-route53";
 import { CloudFrontTarget } from "@aws-cdk/aws-route53-targets";
 import { Bucket } from "@aws-cdk/aws-s3";
-import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSiteStackProps extends StackProps {
@@ -28,11 +26,6 @@ export interface StaticSiteStackProps extends StackProps {
 export class StaticSiteStack extends Stack {
   constructor(app: Construct, id: string, props: StaticSiteStackProps) {
     super(app, id, props);
-
-    new BucketDeployment(this, "Deployment", {
-      sources: [Source.bucket(props.deploymentBucket, "latest")],
-      destinationBucket: props.cloudfrontBucket,
-    });
 
     const httpApi = this.setUpHttpApi();
 
