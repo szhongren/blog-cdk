@@ -31,6 +31,7 @@ export class CdkPipelineStack extends Stack {
       synthCommand: "npm run cdk synth",
       sourceArtifact: cdkSourceArtifact,
       cloudAssemblyArtifact: cdkBuildArtifact,
+      environment: { privileged: true },
     });
 
     const cdkPipeline = new CdkPipeline(this, "CdkPipeline", {
