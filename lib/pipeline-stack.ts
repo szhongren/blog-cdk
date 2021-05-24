@@ -1,9 +1,9 @@
-import { BuildSpec, Project } from "@aws-cdk/aws-codebuild";
-import { Artifact, Pipeline } from "@aws-cdk/aws-codepipeline";
+import { Artifact } from "@aws-cdk/aws-codepipeline";
 import {
   GitHubSourceAction,
   GitHubTrigger,
 } from "@aws-cdk/aws-codepipeline-actions";
+import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { App, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { BlogStage } from "./blog-stage";
@@ -32,6 +32,12 @@ export class CdkPipelineStack extends Stack {
       sourceArtifact: cdkSourceArtifact,
       cloudAssemblyArtifact: cdkBuildArtifact,
       environment: { privileged: true },
+      rolePolicyStatements: [
+        new PolicyStatement({
+          actions: ["route53:ListHostedZonesByName"],
+          resources: ["*"],
+        }),
+      ],
     });
 
     const cdkPipeline = new CdkPipeline(this, "CdkPipeline", {
