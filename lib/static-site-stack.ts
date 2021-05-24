@@ -58,7 +58,7 @@ export class StaticSiteStack extends Stack {
       destinationBucket: cloudfrontBucket,
     });
 
-    const cloudfrontOAI = new OriginAccessIdentity(this, "cloudfrontOAI", {
+    const cloudfrontOAI = new OriginAccessIdentity(this, "CloudfrontOAI", {
       comment: `Allows CloudFront access to S3 bucket`,
     });
 
@@ -73,7 +73,7 @@ export class StaticSiteStack extends Stack {
 
     const cloudfrontDistribution = new CloudFrontWebDistribution(
       this,
-      "MyDistribution",
+      "CloudfrontDistribution",
       {
         comment: "CDN for Web App",
         defaultRootObject: "index.html",
