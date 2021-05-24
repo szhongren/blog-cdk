@@ -1,15 +1,20 @@
 import { HttpApi, HttpMethod } from "@aws-cdk/aws-apigatewayv2";
 import { LambdaProxyIntegration } from "@aws-cdk/aws-apigatewayv2-integrations";
+import { DnsValidatedCertificate } from "@aws-cdk/aws-certificatemanager";
 import {
   CloudFrontAllowedMethods,
   CloudFrontWebDistribution,
   OriginAccessIdentity,
   PriceClass,
+  SecurityPolicyProtocol,
+  SSLMethod,
   ViewerProtocolPolicy,
 } from "@aws-cdk/aws-cloudfront";
 import { PolicyStatement } from "@aws-cdk/aws-iam";
 import { Runtime } from "@aws-cdk/aws-lambda";
 import { NodejsFunction } from "@aws-cdk/aws-lambda-nodejs";
+import { ARecord, HostedZone, RecordTarget } from "@aws-cdk/aws-route53";
+import { CloudFrontTarget } from "@aws-cdk/aws-route53-targets";
 import { BlockPublicAccess, Bucket, HttpMethods } from "@aws-cdk/aws-s3";
 import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core";
@@ -40,36 +45,24 @@ export class StaticSiteStack extends Stack {
       integration: lambdaIntegration,
     });
 
-    const cloudfrontBucket = new Bucket(this, "CloudfrontBucket", {
-      versioned: true,
-      bucketName: "blog-cloudfront-bucket",
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-      cors: [
-        {
-          allowedOrigins: ["*"],
-          allowedMethods: [HttpMethods.GET],
-          maxAge: 3000,
-        },
-      ],
+    const [cloudfrontBucket, cloudfrontOAI] = this.setUpCloudfrontBucket(props);
+
+    const domainName = "shaoz.io";
+
+    const hostedZone = HostedZone.fromLookup(this, "HostedZone", {
+      domainName: domainName,
     });
 
-    new BucketDeployment(this, "Deployment", {
-      sources: [Source.bucket(props.deploymentBucket, "latest")],
-      destinationBucket: cloudfrontBucket,
-    });
-
-    const cloudfrontOAI = new OriginAccessIdentity(this, "CloudfrontOAI", {
-      comment: `Allows CloudFront access to S3 bucket`,
-    });
-
-    cloudfrontBucket.addToResourcePolicy(
-      new PolicyStatement({
-        sid: "Grant Cloudfront Origin Access Identity access to S3 bucket",
-        actions: ["s3:GetObject"],
-        resources: [cloudfrontBucket.bucketArn + "/*"],
-        principals: [cloudfrontOAI.grantPrincipal],
-      })
-    );
+    // TLS certificate
+    const certificateArn = new DnsValidatedCertificate(
+      this,
+      "SiteCertificate",
+      {
+        domainName: domainName,
+        hostedZone: hostedZone,
+        region: "us-east-1", // Cloudfront only checks this region for certificates.
+      }
+    ).certificateArn;
 
     const cloudfrontDistribution = new CloudFrontWebDistribution(
       this,
@@ -79,6 +72,12 @@ export class StaticSiteStack extends Stack {
         defaultRootObject: "index.html",
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         priceClass: PriceClass.PRICE_CLASS_ALL,
+        aliasConfiguration: {
+          acmCertRef: certificateArn,
+          names: [domainName],
+          sslMethod: SSLMethod.SNI,
+          securityPolicy: SecurityPolicyProtocol.TLS_V1_1_2016,
+        },
         originConfigs: [
           {
             // make sure your backend origin is first in the originConfigs list so it takes precedence over the S3 origin
@@ -114,5 +113,51 @@ export class StaticSiteStack extends Stack {
         ],
       }
     );
+
+    // Route53 alias record for the CloudFront distribution
+    new ARecord(this, "SiteARecord", {
+      recordName: domainName,
+      target: RecordTarget.fromAlias(
+        new CloudFrontTarget(cloudfrontDistribution)
+      ),
+      zone: hostedZone,
+    });
+  }
+
+  private setUpCloudfrontBucket(
+    props: StaticSiteStackProps
+  ): [Bucket, OriginAccessIdentity] {
+    const cloudfrontBucket = new Bucket(this, "CloudfrontBucket", {
+      versioned: true,
+      bucketName: "blog-cloudfront-bucket",
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      cors: [
+        {
+          allowedOrigins: ["*"],
+          allowedMethods: [HttpMethods.GET],
+          maxAge: 3000,
+        },
+      ],
+    });
+
+    new BucketDeployment(this, "Deployment", {
+      sources: [Source.bucket(props.deploymentBucket, "latest")],
+      destinationBucket: cloudfrontBucket,
+    });
+
+    const cloudfrontOAI = new OriginAccessIdentity(this, "CloudfrontOAI", {
+      comment: `Allows CloudFront access to S3 bucket`,
+    });
+
+    cloudfrontBucket.addToResourcePolicy(
+      new PolicyStatement({
+        sid: "Grant Cloudfront Origin Access Identity access to S3 bucket",
+        actions: ["s3:GetObject"],
+        resources: [cloudfrontBucket.bucketArn + "/*"],
+        principals: [cloudfrontOAI.grantPrincipal],
+      })
+    );
+
+    return [cloudfrontBucket, cloudfrontOAI];
   }
 }
