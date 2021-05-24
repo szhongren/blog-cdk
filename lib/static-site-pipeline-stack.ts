@@ -69,7 +69,7 @@ export class StaticSitePipelineStack extends Stack {
             post_build: {
               commands: [
                 "aws sts get-caller-identity",
-                "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
+                // "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
               ],
             },
           },
