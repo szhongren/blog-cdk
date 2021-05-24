@@ -1,25 +1,14 @@
-import { DnsValidatedCertificate } from "@aws-cdk/aws-certificatemanager";
-import {
-  CloudFrontWebDistribution,
-  SecurityPolicyProtocol,
-  SSLMethod,
-} from "@aws-cdk/aws-cloudfront";
-import { Code, Function } from "@aws-cdk/aws-lambda";
-import { HostedZone } from "@aws-cdk/aws-route53";
 import { Bucket } from "@aws-cdk/aws-s3";
 import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, Stack, StackProps } from "@aws-cdk/core";
 
+export interface StaticSiteStackProps extends StackProps {
+  deploymentBucket: Bucket;
+}
+
 export class StaticSiteStack extends Stack {
-  staticSiteBucket: Bucket;
-
-  constructor(app: Construct, id: string, props?: StackProps) {
+  constructor(app: Construct, id: string, props: StaticSiteStackProps) {
     super(app, id, props);
-
-    this.staticSiteBucket = new Bucket(this, "DeploymentBucket", {
-      versioned: true,
-      bucketName: "blog-deployment-bucket",
-    });
 
     const cloudfrontBucket = new Bucket(this, "CloudfrontBucket", {
       versioned: true,
@@ -29,7 +18,7 @@ export class StaticSiteStack extends Stack {
     });
 
     new BucketDeployment(this, "Deployment", {
-      sources: [Source.bucket(this.staticSiteBucket, "latest")],
+      sources: [Source.bucket(props.deploymentBucket, "latest")],
       destinationBucket: cloudfrontBucket,
     });
   }

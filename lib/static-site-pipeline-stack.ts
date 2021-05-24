@@ -16,7 +16,7 @@ import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSitePipelineStackProps extends StackProps {
-  staticSiteBucket: Bucket;
+  deploymentBucket: Bucket;
 }
 
 export class StaticSitePipelineStack extends Stack {
@@ -47,7 +47,7 @@ export class StaticSitePipelineStack extends Stack {
       }
     );
 
-    props.staticSiteBucket.grantReadWrite(reactBuildActionProjectRole);
+    props.deploymentBucket.grantReadWrite(reactBuildActionProjectRole);
 
     const reactBuildAction = new CodeBuildAction({
       actionName: "Build",
@@ -59,7 +59,7 @@ export class StaticSitePipelineStack extends Stack {
           version: "0.2",
           env: {
             variables: {
-              ARTIFACTS_BUCKET: props.staticSiteBucket.bucketName,
+              ARTIFACTS_BUCKET: props.deploymentBucket.bucketName,
             },
           },
           phases: {
@@ -85,14 +85,14 @@ export class StaticSitePipelineStack extends Stack {
     const s3DeployAction = new S3DeployAction({
       actionName: "S3Deploy",
       input: reactBuildArtifact,
-      bucket: props.staticSiteBucket,
+      bucket: props.deploymentBucket,
       objectKey: "{datetime}",
     });
 
     const latestS3DeployAction = new S3DeployAction({
       actionName: "LatestS3Deploy",
       input: reactBuildArtifact,
-      bucket: props.staticSiteBucket,
+      bucket: props.deploymentBucket,
       objectKey: "latest",
       extract: false,
     });

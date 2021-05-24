@@ -1,20 +1,29 @@
 import { Construct, Stage, StageProps } from "@aws-cdk/core";
-import { StaticSitePipelineStack as StaticSitePipelineStack } from "./static-site-pipeline-stack";
+import { StaticSitePipelineStack } from "./static-site-pipeline-stack";
 import { StaticSiteStack } from "./static-site-stack";
+import { DeploymentBucketStack } from "./deployment-bucket-stack";
 
 export class BlogStage extends Stage {
-  staticSiteStack: StaticSiteStack;
+  deploymentBucketStack: DeploymentBucketStack;
   reactPipelineStack: StaticSitePipelineStack;
+  staticSiteStack: StaticSiteStack;
 
   constructor(scope: Construct, id: string, props?: StageProps) {
     super(scope, id, props);
 
-    this.staticSiteStack = new StaticSiteStack(this, "StaticSiteStack");
+    this.deploymentBucketStack = new DeploymentBucketStack(
+      this,
+      "DeploymentBucketStack"
+    );
 
     this.reactPipelineStack = new StaticSitePipelineStack(
       this,
       "StaticSitePipelineStack",
-      { staticSiteBucket: this.staticSiteStack.staticSiteBucket }
+      { deploymentBucket: this.deploymentBucketStack.deploymentBucket }
     );
+
+    this.staticSiteStack = new StaticSiteStack(this, "StaticSiteStack", {
+      deploymentBucket: this.deploymentBucketStack.deploymentBucket,
+    });
   }
 }
