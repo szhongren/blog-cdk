@@ -15,37 +15,26 @@ import { Runtime } from "@aws-cdk/aws-lambda";
 import { NodejsFunction } from "@aws-cdk/aws-lambda-nodejs";
 import { ARecord, HostedZone, RecordTarget } from "@aws-cdk/aws-route53";
 import { CloudFrontTarget } from "@aws-cdk/aws-route53-targets";
-import { BlockPublicAccess, Bucket, HttpMethods } from "@aws-cdk/aws-s3";
+import { Bucket } from "@aws-cdk/aws-s3";
 import { BucketDeployment, Source } from "@aws-cdk/aws-s3-deployment";
 import { Construct, Duration, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSiteStackProps extends StackProps {
+  cloudfrontOAI: OriginAccessIdentity;
   deploymentBucket: Bucket;
+  cloudfrontBucket: Bucket;
 }
 
 export class StaticSiteStack extends Stack {
   constructor(app: Construct, id: string, props: StaticSiteStackProps) {
     super(app, id, props);
 
-    const httpApi = new HttpApi(this, "ApiGateway");
-
-    const helloWorldLambda = new NodejsFunction(this, "HelloWorldLambda", {
-      entry: `${__dirname}/backend/index.ts`,
-      handler: "handler",
-      runtime: Runtime.NODEJS_12_X,
+    new BucketDeployment(this, "Deployment", {
+      sources: [Source.bucket(props.deploymentBucket, "latest")],
+      destinationBucket: props.cloudfrontBucket,
     });
 
-    const lambdaIntegration = new LambdaProxyIntegration({
-      handler: helloWorldLambda,
-    });
-
-    httpApi.addRoutes({
-      path: "/api/helloworld", // You must include the `/api/` since CloudFront will not truncate it
-      methods: [HttpMethod.GET],
-      integration: lambdaIntegration,
-    });
-
-    const [cloudfrontBucket, cloudfrontOAI] = this.setUpCloudfrontBucket(props);
+    const httpApi = this.setUpHttpApi();
 
     const domainName = "shaoz.io";
 
@@ -98,8 +87,8 @@ export class StaticSiteStack extends Stack {
           },
           {
             s3OriginSource: {
-              s3BucketSource: cloudfrontBucket,
-              originAccessIdentity: cloudfrontOAI,
+              s3BucketSource: props.cloudfrontBucket,
+              originAccessIdentity: props.cloudfrontOAI,
             },
             behaviors: [
               {
@@ -124,40 +113,24 @@ export class StaticSiteStack extends Stack {
     });
   }
 
-  private setUpCloudfrontBucket(
-    props: StaticSiteStackProps
-  ): [Bucket, OriginAccessIdentity] {
-    const cloudfrontBucket = new Bucket(this, "CloudfrontBucket", {
-      versioned: true,
-      bucketName: "blog-cloudfront-bucket",
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-      cors: [
-        {
-          allowedOrigins: ["*"],
-          allowedMethods: [HttpMethods.GET],
-          maxAge: 3000,
-        },
-      ],
+  private setUpHttpApi() {
+    const httpApi = new HttpApi(this, "ApiGateway");
+
+    const helloWorldLambda = new NodejsFunction(this, "HelloWorldLambda", {
+      entry: `${__dirname}/backend/index.ts`,
+      handler: "handler",
+      runtime: Runtime.NODEJS_12_X,
     });
 
-    new BucketDeployment(this, "Deployment", {
-      sources: [Source.bucket(props.deploymentBucket, "latest")],
-      destinationBucket: cloudfrontBucket,
+    const lambdaIntegration = new LambdaProxyIntegration({
+      handler: helloWorldLambda,
     });
 
-    const cloudfrontOAI = new OriginAccessIdentity(this, "CloudfrontOAI", {
-      comment: `Allows CloudFront access to S3 bucket`,
+    httpApi.addRoutes({
+      path: "/api/helloworld",
+      methods: [HttpMethod.GET],
+      integration: lambdaIntegration,
     });
-
-    cloudfrontBucket.addToResourcePolicy(
-      new PolicyStatement({
-        sid: "Grant Cloudfront Origin Access Identity access to S3 bucket",
-        actions: ["s3:GetObject"],
-        resources: [cloudfrontBucket.bucketArn + "/*"],
-        principals: [cloudfrontOAI.grantPrincipal],
-      })
-    );
-
-    return [cloudfrontBucket, cloudfrontOAI];
+    return httpApi;
   }
 }

@@ -16,6 +16,7 @@ import { Bucket } from "@aws-cdk/aws-s3";
 import { Construct, SecretValue, Stack, StackProps } from "@aws-cdk/core";
 
 export interface StaticSitePipelineStackProps extends StackProps {
+  cloudfrontBucket: Bucket;
   deploymentBucket: Bucket;
 }
 
@@ -47,7 +48,7 @@ export class StaticSitePipelineStack extends Stack {
       }
     );
 
-    props.deploymentBucket.grantReadWrite(reactBuildActionProjectRole);
+    props.cloudfrontBucket.grantReadWrite(reactBuildActionProjectRole);
 
     const reactBuildAction = new CodeBuildAction({
       actionName: "Build",
@@ -59,7 +60,7 @@ export class StaticSitePipelineStack extends Stack {
           version: "0.2",
           env: {
             variables: {
-              ARTIFACTS_BUCKET: props.deploymentBucket.bucketName,
+              ARTIFACTS_BUCKET: props.cloudfrontBucket.bucketName,
             },
           },
           phases: {
@@ -67,10 +68,7 @@ export class StaticSitePipelineStack extends Stack {
               commands: ["npm install", "npm run build"],
             },
             post_build: {
-              commands: [
-                "aws sts get-caller-identity",
-                // "aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}/latest",
-              ],
+              commands: ["aws s3 rm --recursive s3://${ARTIFACTS_BUCKET}"],
             },
           },
           artifacts: {
@@ -97,13 +95,23 @@ export class StaticSitePipelineStack extends Stack {
       extract: false,
     });
 
+    const cloudfrontS3DeployAction = new S3DeployAction({
+      actionName: "CloudfrontS3Deploy",
+      input: reactBuildArtifact,
+      bucket: props.cloudfrontBucket,
+    });
+
     const staticSitePipeline = new Pipeline(this, "StaticSitePipeline", {
       stages: [
         { stageName: "Source", actions: [reactSourceAction] },
         { stageName: "Build", actions: [reactBuildAction] },
         {
           stageName: "Deploy",
-          actions: [s3DeployAction, latestS3DeployAction],
+          actions: [
+            s3DeployAction,
+            latestS3DeployAction,
+            cloudfrontS3DeployAction,
+          ],
         },
       ],
     });
