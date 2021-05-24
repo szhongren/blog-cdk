@@ -16,17 +16,14 @@ export class BlogStage extends Stage {
       "DeploymentBucketStack"
     );
 
-    this.staticSiteStack = new StaticSiteStack(this, "StaticSiteStack", {
-      deploymentBucket: this.deploymentBucketStack.deploymentBucket,
-    });
-
     this.reactPipelineStack = new StaticSitePipelineStack(
       this,
       "StaticSitePipelineStack",
-      {
-        deploymentBucket: this.deploymentBucketStack.deploymentBucket,
-        cloudfrontBucket: this.staticSiteStack.cloudfrontBucket,
-      }
+      { deploymentBucket: this.deploymentBucketStack.deploymentBucket }
     );
+
+    this.staticSiteStack = new StaticSiteStack(this, "StaticSiteStack", {
+      deploymentBucket: this.deploymentBucketStack.deploymentBucket,
+    });
   }
 }
