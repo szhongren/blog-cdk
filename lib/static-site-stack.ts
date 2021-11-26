@@ -60,6 +60,9 @@ export class StaticSiteStack extends Stack {
           sslMethod: SSLMethod.SNI,
           securityPolicy: SecurityPolicyProtocol.TLS_V1_1_2016,
         },
+        errorConfigurations: [
+          { errorCode: 404, responsePagePath: "/index.html" },
+        ],
         originConfigs: [
           {
             // make sure your backend origin is first in the originConfigs list so it takes precedence over the S3 origin
